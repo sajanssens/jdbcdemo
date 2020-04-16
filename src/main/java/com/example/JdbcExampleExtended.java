@@ -5,28 +5,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class JdbcExampleRefactored {
+public class JdbcExampleExtended {
 
-    public static void main(String[] args) { new JdbcExampleRefactored().start(); }
+    private static int randomAge = (int) (Math.random() * 100);
+
+    public static void main(String[] args) { new JdbcExampleExtended().start(); }
 
     private void start() {
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/jdbcdemo", "root", "root");
              Statement statement = connection.createStatement()) {
-
-            int randomAge = (int) (Math.random() * 100);
-
             deleteSomeRows(connection, randomAge);
-            updateSomeRows(connection, randomAge);
+            insertSomeRows(statement, randomAge);
+            insertSomeRowsTransactional(connection, randomAge, statement);
+            showSomeData(statement);
             showSomeDatabaseMetadata(connection);
-
-            ResultSet result = statement.executeQuery("SELECT * FROM PERSON");
-
-            showSomeResultsetMetadata(result);
-            List<Person> persons = showRows(result);
-            showPersons(persons);
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    private void showSomeData(Statement statement) throws SQLException {
+        ResultSet result = statement.executeQuery("SELECT * FROM PERSON");
+
+        showSomeResultSetMetadata(result);
+        List<Person> persons = showRows(result);
+        showPersons(persons);
+
+        // rewind, retry:
+        result.beforeFirst();
+        showRows(result);
     }
 
     private void deleteSomeRows(Connection connection, int randomAge) throws SQLException {
@@ -37,10 +44,31 @@ public class JdbcExampleRefactored {
         preparedStatement.close();
     }
 
-    private void updateSomeRows(Connection connection, int randomAge) throws SQLException {
-        Statement statement = connection.createStatement();
-        statement.executeUpdate("insert into PERSON VALUES ('Bram', " + randomAge + ")");
+    private void insertSomeRows(Statement statement, int randomAge) throws SQLException {
+        int i = statement.executeUpdate("insert into PERSON VALUES ('Bram', " + randomAge + ")");
+        System.out.println("Rows i inserted: " + i);
         statement.close();
+    }
+
+    private void insertSomeRowsTransactional(Connection connection, int randomAge, Statement statement) throws SQLException {
+        try {
+            connection.setAutoCommit(false);
+
+            int i = statement.executeUpdate("insert into PERSON VALUES ('Bram', " + randomAge + ")");
+            System.out.println("Rows i inserted: " + i);
+
+            // typo in query: abort transaction via catch --> rollback
+            int j = statement.executeUpdate("ins ert into PERSON VALUES ('Bram2', " + randomAge + ")");
+            System.out.println("Rows j inserted: " + j);
+
+            statement.close();
+            connection.commit(); // if everything was ok.
+        } catch (SQLException e) {
+            System.err.println("Something in the database went wrong: " + e.getMessage());
+            connection.rollback(); // if something went wrong
+        } finally {
+            connection.setAutoCommit(true);
+        }
     }
 
     private void showSomeDatabaseMetadata(Connection connection) throws SQLException {
@@ -49,7 +77,7 @@ public class JdbcExampleRefactored {
         System.out.println("DatabaseProductName: " + databaseProductName);
     }
 
-    private void showSomeResultsetMetadata(ResultSet result) throws SQLException {
+    private void showSomeResultSetMetadata(ResultSet result) throws SQLException {
         ResultSetMetaData metaData = result.getMetaData();
         String catalogName = metaData.getCatalogName(1);
         String tableName = metaData.getTableName(1);
@@ -59,7 +87,8 @@ public class JdbcExampleRefactored {
         StringJoiner columnJoiner = new StringJoiner(", ");
         for (int i = 1; i <= metaData.getColumnCount(); i++) {
             JDBCType jdbcType = JDBCType.valueOf(metaData.getColumnType(i));
-            columnJoiner.add(metaData.getColumnName(i) + " (" + jdbcType + ")");
+            String newElement = metaData.getColumnName(i) + " (" + jdbcType + ")";
+            columnJoiner.add(newElement);
         }
         System.out.println("Columns: " + columnJoiner);
     }

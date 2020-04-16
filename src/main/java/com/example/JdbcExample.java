@@ -4,8 +4,9 @@ import java.sql.*;
 
 public class JdbcExample {
     public static void main(String[] args) throws SQLException, ClassNotFoundException {
+
         // 1
-        Class.forName("com.mysql.cj.jdbc.Driver");
+        // Class.forName("com.mysql.cj.jdbc.Driver"); // not necessary since Java ...
 
         // 2
         Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/jdbcdemo", "root", "root");
@@ -24,6 +25,7 @@ public class JdbcExample {
             System.out.println(name + " - " + age);
         }
 
+        // 6
         statement.close();
         connection.close();
     }
