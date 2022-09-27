@@ -1,6 +1,14 @@
 package com.example;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.JDBCType;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
@@ -11,29 +19,17 @@ public class JdbcExampleExtended {
 
     public static void main(String[] args) { new JdbcExampleExtended().start(); }
 
-    private void start() {
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/jdbcdemo", "root", "root");
+    void start() {
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3307/hrm", "root", "root");
              Statement statement = connection.createStatement()) {
-            deleteSomeRows(connection, randomAge);
-            insertSomeRows(statement, randomAge);
-            insertSomeRowsTransactional(connection, randomAge, statement);
-            showSomeData(statement);
+            // deleteSomeRows(connection, randomAge);
+            // insertSomeRows(statement, randomAge);
+            // insertSomeRowsTransactional(connection, randomAge, statement);
+            // showSomeData(statement);
             showSomeDatabaseMetadata(connection);
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-
-    private void showSomeData(Statement statement) throws SQLException {
-        ResultSet result = statement.executeQuery("SELECT * FROM PERSON");
-
-        showSomeResultSetMetadata(result);
-        List<Person> persons = showRows(result);
-        showPersons(persons);
-
-        // rewind, retry:
-        result.beforeFirst();
-        showRows(result);
     }
 
     private void deleteSomeRows(Connection connection, int randomAge) throws SQLException {
@@ -47,7 +43,6 @@ public class JdbcExampleExtended {
     private void insertSomeRows(Statement statement, int randomAge) throws SQLException {
         int i = statement.executeUpdate("insert into PERSON VALUES ('Bram', " + randomAge + ")");
         System.out.println("Rows i inserted: " + i);
-        statement.close();
     }
 
     private void insertSomeRowsTransactional(Connection connection, int randomAge, Statement statement) throws SQLException {
@@ -61,23 +56,28 @@ public class JdbcExampleExtended {
             int j = statement.executeUpdate("ins ert into PERSON VALUES ('Bram2', " + randomAge + ")");
             System.out.println("Rows j inserted: " + j);
 
-            statement.close();
             connection.commit(); // if everything was ok.
         } catch (SQLException e) {
-            System.err.println("Something in the database went wrong: " + e.getMessage());
+            System.err.println("Transaction aborted. Something in the database went wrong: " + e.getMessage());
             connection.rollback(); // if something went wrong
         } finally {
             connection.setAutoCommit(true);
         }
     }
 
-    private void showSomeDatabaseMetadata(Connection connection) throws SQLException {
-        DatabaseMetaData databaseMetaData = connection.getMetaData();
-        String databaseProductName = databaseMetaData.getDatabaseProductName();
-        System.out.println("DatabaseProductName: " + databaseProductName);
+    private void showSomeData(Statement statement) throws SQLException {
+        ResultSet result = statement.executeQuery("SELECT * FROM PERSON");
+
+        showMetadata(result);
+        List<Person> persons = showData(result);
+        showPersons(persons);
+
+        // rewind, retry:
+        result.beforeFirst();
+        showData(result);
     }
 
-    private void showSomeResultSetMetadata(ResultSet result) throws SQLException {
+    private void showMetadata(ResultSet result) throws SQLException {
         ResultSetMetaData metaData = result.getMetaData();
         String catalogName = metaData.getCatalogName(1);
         String tableName = metaData.getTableName(1);
@@ -93,7 +93,7 @@ public class JdbcExampleExtended {
         System.out.println("Columns: " + columnJoiner);
     }
 
-    private List<Person> showRows(ResultSet result) throws SQLException {
+    private List<Person> showData(ResultSet result) throws SQLException {
         System.out.println("Rows:");
         List<Person> persons = new ArrayList<>();
         while (result.next()) {
@@ -112,4 +112,14 @@ public class JdbcExampleExtended {
         }
     }
 
+    private void showSomeDatabaseMetadata(Connection connection) throws SQLException {
+        DatabaseMetaData databaseMetaData = connection.getMetaData();
+        String databaseProductName = databaseMetaData.getDatabaseProductName();
+        ResultSet result = databaseMetaData.getTables(null, null, null, new String[]{"TABLE"});
+        while (result.next()) {
+            String name = result.getString(1);
+            System.out.println(name);
+        }
+        System.out.println("DatabaseProductName: " + databaseProductName);
+    }
 }

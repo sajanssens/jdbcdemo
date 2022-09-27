@@ -6,10 +6,10 @@ public class JdbcExample {
     public static void main(String[] args) throws SQLException, ClassNotFoundException {
 
         // 1
-        // Class.forName("com.mysql.cj.jdbc.Driver"); // not necessary since Java ...
+        Class.forName("com.mysql.cj.jdbc.Driver"); // not necessary since Java 6 (with the SPI)
 
         // 2
-        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/jdbcdemo", "root", "root");
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3307/hrm", "root", "root");
 
         // 3
         Statement statement = connection.createStatement();
