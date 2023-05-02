@@ -9,13 +9,13 @@ public class JdbcExample {
         Class.forName("com.mysql.cj.jdbc.Driver"); // not necessary since Java 6 (with the SPI)
 
         // 2
-        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3307/hrm", "root", "root");
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/jdbcdemo", "root", "root");
 
         // 3
         Statement statement = connection.createStatement();
 
         // 4
-        ResultSet result = statement.executeQuery("SELECT * FROM PERSON");
+        ResultSet result = statement.executeQuery("SELECT * FRO M PERSON");
 
         // 5
         while (result.next()) {
