@@ -1,9 +1,17 @@
 package com.example;
 
-import java.sql.*;
+import com.example.dao.PersonDao;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class JdbcExample {
     public static void main(String[] args) throws SQLException, ClassNotFoundException {
+
+        PersonDao.createDatabase();
 
         // 1
         Class.forName("com.mysql.cj.jdbc.Driver"); // not necessary since Java 6 (with the SPI)
@@ -15,7 +23,7 @@ public class JdbcExample {
         Statement statement = connection.createStatement();
 
         // 4
-        ResultSet result = statement.executeQuery("SELECT * FRO M PERSON");
+        ResultSet result = statement.executeQuery("SELECT * FROM person");
 
         // 5
         while (result.next()) {
@@ -26,6 +34,7 @@ public class JdbcExample {
         }
 
         // 6
+        // result.close(); // done by:
         statement.close();
         connection.close();
     }

@@ -12,7 +12,7 @@ public class JdbcExampleRefactored {
         PersonDao personDao = new PersonDao(); // data access object
 
         try {
-            personDao.createDatabase();
+            PersonDao.createDatabase();
             personDao.getPersons().forEach(System.out::println);
             personDao.getPersonsWithGender().forEach(System.out::println);
             personDao.getPersonsByName("Bram").forEach(System.out::println);

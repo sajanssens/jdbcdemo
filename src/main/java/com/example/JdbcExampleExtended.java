@@ -22,12 +22,12 @@ public class JdbcExampleExtended {
     public static void main(String[] args) { new JdbcExampleExtended().start(); }
 
     void start() {
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3307/hrm", "root", "root");
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/jdbcdemo", "root", "root");
              Statement statement = connection.createStatement()) {
-            // deleteSomeRows(connection, randomAge);
-            // insertSomeRows(statement, randomAge);
-            // insertSomeRowsTransactional(connection, randomAge, statement);
-            // showSomeData(statement);
+            deleteSomeRows(connection, randomAge);
+            insertSomeRows(statement, randomAge);
+            insertSomeRowsTransactional(connection, randomAge, statement);
+            showSomeData(statement);
             showSomeDatabaseMetadata(connection);
         } catch (SQLException e) {
             e.printStackTrace();

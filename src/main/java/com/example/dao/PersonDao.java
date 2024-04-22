@@ -14,9 +14,9 @@ import java.util.List;
 
 import static com.example.DatabaseProperties.get;
 
-public class PersonDao {
+public class PersonDao { // Repo
 
-    public void createDatabase() throws SQLException {
+    public static void createDatabase() throws SQLException {
         try (Connection connection = DriverManager.getConnection(get("database.url"), get("database.user"), get("database.password"));
              Statement statement = connection.createStatement()) {
             statement.execute("drop table if exists person;");
