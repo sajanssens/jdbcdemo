@@ -8,9 +8,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class JdbcExample {
-    public static void main(String[] args) throws SQLException, ClassNotFoundException {
+import static java.lang.IO.println;
 
+public class JdbcExample {
+    void main() throws SQLException, ClassNotFoundException {
         PersonDao.createDatabase();
 
         // 1
@@ -30,7 +31,7 @@ public class JdbcExample {
             String name = result.getString("name");
             int age = result.getInt("age");
 
-            System.out.println(name + " - " + age);
+            println(name + " - " + age);
         }
 
         // 6

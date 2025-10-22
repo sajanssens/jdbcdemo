@@ -13,11 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.example.DatabaseProperties.get;
+import static java.lang.IO.println;
 
 public class PersonDao { // Repo
 
     public static void createDatabase() throws SQLException {
-        try (Connection connection = DriverManager.getConnection(get("database.url"), get("database.user"), get("database.password"));
+        try (Connection connection = connect();
              Statement statement = connection.createStatement()) {
             statement.execute("drop table if exists person;");
             statement.execute("drop table if exists gender;");
@@ -29,37 +30,40 @@ public class PersonDao { // Repo
     }
 
     public List<Person> getPersons() throws SQLException {
-        try (Connection connection = DriverManager.getConnection(get("database.url"), get("database.user"), get("database.password"));
+        try (Connection connection = connect();
              Statement statement = connection.createStatement()) {
             ResultSet result = statement.executeQuery("SELECT * from person");
-            return showRows(result);
+            return toPersons(result);
         }
     }
 
     public List<Person> getPersonsWithGender() throws SQLException {
-        try (Connection connection = DriverManager.getConnection(get("database.url"), get("database.user"), get("database.password"));
+        try (Connection connection = connect();
              Statement statement = connection.createStatement()) {
-            ResultSet result = statement.executeQuery(
-                    "select person.name, person.age, gender.name\n" +
-                            "from person\n" +
-                            "    join gender on person.genderId = gender.id\n" +
-                            "where age > 0");
+            ResultSet result = statement.executeQuery("""
+                    select person.name, person.age, gender.name
+                    from person
+                        join gender
+                            on person.genderId = gender.id
+                    where age > 0
+                    """
+            );
 
-            return showRows(result);
+            return toPersons(result);
         }
     }
 
     public List<Person> getPersonsByName(String name) throws SQLException {
-        try (Connection connection = DriverManager.getConnection(get("database.url"), get("database.user"), get("database.password"));
+        try (Connection connection = connect();
              PreparedStatement statement = connection.prepareStatement("SELECT * from person where name LIKE ?")) {
             statement.setString(1, name);
             ResultSet result = statement.executeQuery();
-            return showRows(result);
+            return toPersons(result);
         }
     }
 
     public int insert(Person p) throws SQLException {
-        try (Connection connection = DriverManager.getConnection(get("database.url"), get("database.user"), get("database.password"));
+        try (Connection connection = connect();
              PreparedStatement statement = connection.prepareStatement("INSERT into person(name, age, genderId) VALUES (?, ?,  ?)")) {
             statement.setString(1, p.name);
             statement.setInt(2, p.age);
@@ -68,7 +72,19 @@ public class PersonDao { // Repo
         }
     }
 
-    private List<Person> showRows(ResultSet result) throws SQLException {
+    public boolean remove(int id) throws SQLException {
+        try (Connection connection = connect();
+             PreparedStatement statement = connection.prepareStatement("DELETE FROM person where id = ?")) {
+            statement.setInt(1, id);
+            return statement.executeUpdate() == 1;
+        }
+    }
+
+    private static Connection connect() throws SQLException {
+        return DriverManager.getConnection(get("database.url"), get("database.user"), get("database.password"));
+    }
+
+    private List<Person> toPersons(ResultSet result) throws SQLException {
         List<Person> persons = new ArrayList<>();
         while (result.next()) {
             String name = result.getString("person.name");
@@ -82,12 +98,11 @@ public class PersonDao { // Repo
     }
 
     private Gender getGender(ResultSet result) {
-        Gender g = Gender.Onbekend;
         try {
-            g = Gender.valueOf(result.getString("gender.name"));
+            return Gender.valueOf(result.getString("gender.name"));
         } catch (SQLException e) {
-            System.err.println("SQLException: " + e.getMessage());
+            println("getGender - SQLException: " + e.getMessage());
+            return Gender.Onbekend;
         }
-        return g;
     }
 }

@@ -1,5 +1,6 @@
 package com.example;
 
+import com.example.dao.PersonDao;
 import com.example.domain.Person;
 
 import java.sql.Connection;
@@ -13,21 +14,31 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.StringJoiner;
+
+import static java.lang.IO.println;
 
 public class JdbcExampleExtended {
 
-    private static int randomAge = (int) (Math.random() * 100);
+    private final Random random = new Random();
 
-    public static void main(String[] args) { new JdbcExampleExtended().start(); }
+    void main() {
+        new JdbcExampleExtended().start();
+    }
 
-    void start() {
+    private void start() {
+
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/jdbcdemo", "root", "root");
-             Statement statement = connection.createStatement()) {
+             Statement statementFWD = connection.createStatement();
+             Statement statementSCROLL = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
+            PersonDao.createDatabase();
+            var randomAge = random.nextInt(100);
+
             deleteSomeRows(connection, randomAge);
-            insertSomeRows(statement, randomAge);
-            insertSomeRowsTransactional(connection, randomAge, statement);
-            showSomeData(statement);
+            insertSomeRows(statementFWD, randomAge);
+            insertSomeRowsTransactional(connection, randomAge, statementFWD);
+            showSomeData(statementSCROLL);
             showSomeDatabaseMetadata(connection);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -38,25 +49,25 @@ public class JdbcExampleExtended {
         PreparedStatement preparedStatement = connection.prepareStatement("delete from person where age>?");
         preparedStatement.setInt(1, randomAge);
         int deleted = preparedStatement.executeUpdate();
-        System.out.println("Rows deleted: " + deleted);
+        println("Rows deleted: " + deleted);
         preparedStatement.close();
     }
 
     private void insertSomeRows(Statement statement, int randomAge) throws SQLException {
-        int i = statement.executeUpdate("insert into PERSON VALUES ('Bram', " + randomAge + ")");
-        System.out.println("Rows i inserted: " + i);
+        int i = statement.executeUpdate("insert into person VALUES ('Bram', " + randomAge + ", 1)");
+        println("Rows i inserted: " + i);
     }
 
     private void insertSomeRowsTransactional(Connection connection, int randomAge, Statement statement) throws SQLException {
         try {
             connection.setAutoCommit(false);
 
-            int i = statement.executeUpdate("insert into PERSON VALUES ('Bram', " + randomAge + ")");
-            System.out.println("Rows i inserted: " + i);
+            int i = statement.executeUpdate("insert into person VALUES ('Bram', " + randomAge + ", 1)");
+            println("Rows i inserted: " + i);
 
             // typo in query: abort transaction via catch --> rollback
-            int j = statement.executeUpdate("ins ert into PERSON VALUES ('Bram2', " + randomAge + ")");
-            System.out.println("Rows j inserted: " + j);
+            int j = statement.executeUpdate("ins ert into person VALUES ('Bram', " + randomAge + ", 1)");
+            println("Rows j inserted: " + j);
 
             connection.commit(); // if everything was ok.
         } catch (SQLException e) {
@@ -68,7 +79,7 @@ public class JdbcExampleExtended {
     }
 
     private void showSomeData(Statement statement) throws SQLException {
-        ResultSet result = statement.executeQuery("SELECT * FROM PERSON");
+        ResultSet result = statement.executeQuery("SELECT * FROM person");
 
         showMetadata(result);
         List<Person> persons = showData(result);
@@ -83,8 +94,8 @@ public class JdbcExampleExtended {
         ResultSetMetaData metaData = result.getMetaData();
         String catalogName = metaData.getCatalogName(1);
         String tableName = metaData.getTableName(1);
-        System.out.println("Database: " + catalogName);
-        System.out.println("Table: " + tableName);
+        println("Database: " + catalogName);
+        println("Table: " + tableName);
 
         StringJoiner columnJoiner = new StringJoiner(", ");
         for (int i = 1; i <= metaData.getColumnCount(); i++) {
@@ -92,25 +103,25 @@ public class JdbcExampleExtended {
             String newElement = metaData.getColumnName(i) + " (" + jdbcType + ")";
             columnJoiner.add(newElement);
         }
-        System.out.println("Columns: " + columnJoiner);
+        println("Columns: " + columnJoiner);
     }
 
     private List<Person> showData(ResultSet result) throws SQLException {
-        System.out.println("Rows:");
+        println("Rows:");
         List<Person> persons = new ArrayList<>();
         while (result.next()) {
             String name = result.getString("name");
             int age = result.getInt("age");
             persons.add(new Person(name, age));
-            System.out.println("\t" + name + ", " + age);
+            println("\t" + name + ", " + age);
         }
         return persons;
     }
 
     private void showPersons(List<Person> persons) {
-        System.out.println("Persons:");
+        println("Persons:");
         for (Person person : persons) {
-            System.out.println("\t" + person);
+            println("\t" + person);
         }
     }
 
@@ -120,8 +131,8 @@ public class JdbcExampleExtended {
         ResultSet result = databaseMetaData.getTables(null, null, null, new String[]{"TABLE"});
         while (result.next()) {
             String name = result.getString(1);
-            System.out.println(name);
+            println(name);
         }
-        System.out.println("DatabaseProductName: " + databaseProductName);
+        println("DatabaseProductName: " + databaseProductName);
     }
 }
