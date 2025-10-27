@@ -12,7 +12,7 @@ import static java.lang.IO.println;
 
 public class JdbcExample {
     void main() throws SQLException, ClassNotFoundException {
-        PersonDao.createDatabase();
+        // PersonDao.createDatabase();
 
         // 1
         Class.forName("com.mysql.cj.jdbc.Driver"); // not necessary since Java 6 (with the SPI)

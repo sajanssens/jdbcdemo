@@ -30,16 +30,16 @@ public class JdbcExampleExtended {
     private void start() {
 
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/jdbcdemo", "root", "root");
-             Statement statementFWD = connection.createStatement();
+             Statement statement = connection.createStatement();
              Statement statementSCROLL = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            PersonDao.createDatabase();
             var randomAge = random.nextInt(100);
 
+            PersonDao.createDatabase();
+            insertSomeRows(statement, randomAge);
             deleteSomeRows(connection, randomAge);
-            insertSomeRows(statementFWD, randomAge);
-            insertSomeRowsTransactional(connection, randomAge, statementFWD);
-            showSomeData(statementSCROLL);
-            showSomeDatabaseMetadata(connection);
+            insertSomeRowsTransactional(connection, randomAge, statement);
+            showMetadata(statementSCROLL);
+            showDatabaseMetadata(connection);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -78,7 +78,7 @@ public class JdbcExampleExtended {
         }
     }
 
-    private void showSomeData(Statement statement) throws SQLException {
+    private void showMetadata(Statement statement) throws SQLException {
         ResultSet result = statement.executeQuery("SELECT * FROM person");
 
         showMetadata(result);
@@ -125,7 +125,7 @@ public class JdbcExampleExtended {
         }
     }
 
-    private void showSomeDatabaseMetadata(Connection connection) throws SQLException {
+    private void showDatabaseMetadata(Connection connection) throws SQLException {
         DatabaseMetaData databaseMetaData = connection.getMetaData();
         String databaseProductName = databaseMetaData.getDatabaseProductName();
         ResultSet result = databaseMetaData.getTables(null, null, null, new String[]{"TABLE"});

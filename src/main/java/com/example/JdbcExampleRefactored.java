@@ -19,6 +19,8 @@ public class JdbcExampleRefactored {
             personDao.getPersons().forEach(IO::println);
             personDao.getPersonsWithGender().forEach(IO::println);
             personDao.getPersonsByName("Bram").forEach(IO::println);
+            boolean removed = personDao.remove(1);
+            println("Remove succeeded? " + removed);
         } catch (SQLException e) {
             System.err.println("Query ging fout: " + e.getMessage());
         }
